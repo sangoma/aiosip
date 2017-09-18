@@ -5,20 +5,23 @@ import aiosip
 
 
 @asyncio.coroutine
+def handle_subscribe(dialog, message):
+    print("SUBSCRIPTION RECEIVED")
+
+
+@asyncio.coroutine
 def start_subscription(dialog, message):
-    print('Subscription started!')
-
-    headers = {
-        'Via': message.headers['Via'],
-        'CSeq': message.headers['CSeq'],
-        'Call-ID': message.headers['Call-ID']
-    }
-
+    assert message.method == 'REGISTER'
     dialog.send_reply(status_code=200,
                       status_message='OK',
                       to_details=message.to_details,
                       from_details=message.from_details,
-                      headers=headers)
+                      headers={'Via': message.headers['Via'],
+                               'CSeq': message.headers['CSeq'],
+                               'Call-ID': message.headers['Call-ID']})
+
+    print('Subscription started!')
+    dialog.register_callback('SUBSCRIBE', handle_subscribe)
 
 
 @asyncio.coroutine
