@@ -6,7 +6,14 @@ import aiosip
 
 @asyncio.coroutine
 def handle_subscribe(dialog, message):
-    print("SUBSCRIPTION RECEIVED")
+    for idx in range(1, 11):
+        dialog.send_message('NOTIFY',
+                            to_details=message.to_details,
+                            from_details=message.from_details,
+                            headers={'Via': message.headers['Via'],
+                                    'Call-ID': message.headers['Call-ID']},
+                            payload=str(idx))
+        yield from asyncio.sleep(1)
 
 
 @asyncio.coroutine
