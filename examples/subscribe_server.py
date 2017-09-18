@@ -19,13 +19,15 @@ def handle_subscribe(dialog, message):
 @asyncio.coroutine
 def start_subscription(dialog, message):
     assert message.method == 'REGISTER'
-    dialog.send_reply(status_code=200,
-                      status_message='OK',
+    authenticate = 'Poop in your mouth'
+    dialog.send_reply(status_code=401,
+                      status_message='Unauthorized',
                       to_details=message.to_details,
                       from_details=message.from_details,
                       headers={'Via': message.headers['Via'],
                                'CSeq': message.headers['CSeq'],
-                               'Call-ID': message.headers['Call-ID']})
+                               'Call-ID': message.headers['Call-ID'],
+                               'WWW-Authenticate': authenticate})
 
     print('Subscription started!')
     dialog.register_callback('SUBSCRIBE', handle_subscribe)

@@ -15,6 +15,7 @@ from functools import partial
 class Transaction:
     def __init__(self, dialog, password=None, future=None, *, loop=None):
         self.dialog = dialog
+        self.password = password
         self.loop = loop or asyncio.get_event_loop()
         self.future = future or loop.create_future()
         self.attempts = 5
