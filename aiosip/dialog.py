@@ -11,6 +11,21 @@ from .exceptions import RegisterFailed, RegisterOngoing, InviteFailed, InviteOng
 
 from functools import partial
 
+
+class Transaction(self):
+    def __init__(self):
+        pass
+
+    def feed_message(self, message):
+        pass
+
+    def feed_exception(self, message):
+        pass
+
+    def __await__(self):
+        pass
+
+
 class Dialog:
     def __init__(self, *, logger=dialog_logger):
         self.logger = logger
