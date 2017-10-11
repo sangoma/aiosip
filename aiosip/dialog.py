@@ -106,16 +106,34 @@ class Dialog:
                       future=future)
 
         if method != 'ACK':
-            transaction = UnreliableTransaction(self, original_msg=msg,
-                                                future=msg.future,
-                                                loop=self.app.loop)
-
-            self._transactions[method][self.cseq] = transaction
-            self.connection.send_message(msg)
-            return transaction.future
+            return self.start_transaction(method, msg, future=future)
 
         self.connection.send_message(msg)
         return None
+
+    def start_transaction(self, method, msg, *, future=None):
+        def _done_callback(result):
+            if result.cancelled():
+                hdrs = CIMultiDict()
+                hdrs['From'] = msg.headers['From']
+                hdrs['To'] = msg.headers['To']
+                hdrs['Call-ID'] = msg.headers['Call-ID']
+                hdrs['CSeq'] = msg.headers['CSeq'].replace(method, 'CANCEL')
+                hdrs['Via'] = msg.headers['Via']
+                self.send_message(method='CANCEL', headers=hdrs)
+
+        transaction = UnreliableTransaction(self, original_msg=msg,
+                                            future=msg.future,
+                                            loop=self.app.loop)
+
+        self._transactions[method][self.cseq] = transaction
+
+        future = transaction.future
+        if method in ('REGISTER', 'INVITE', 'SUBSCRIBE'):
+            future.add_done_callback(_done_callback)
+
+        self.connection.send_message(msg)
+        return future
 
     def reply(self, response):
         response.to_details.add_tag()
