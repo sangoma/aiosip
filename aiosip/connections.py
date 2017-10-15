@@ -72,3 +72,9 @@ class Connection:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def __repr__(self):
+        from_uri = '{}:{}'.format(*self.remote_addr) if self.remote_addr else None
+        to_uri = '{}:{}'.format(*self.local_addr) if self.local_addr else None
+        return '<{} from={}, to={}>'.format(self.__class__.__name__,
+                                            from_uri , to_uri)

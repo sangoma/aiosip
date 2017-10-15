@@ -24,7 +24,7 @@ class TestServer:
 
     @asyncio.coroutine
     def close(self):
-        pass
+        self.app.close()
 
     @property
     def sip_config(self):

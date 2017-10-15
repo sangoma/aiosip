@@ -195,3 +195,10 @@ class Application(MutableMapping):
 
     def make_handler(self, protocol):
         return lambda: protocol(app=self, loop=self.loop)
+
+    def close(self):
+        print()
+        print(id(self), 'CLOSIIIIING....', list(self.connections))
+        print()
+        for connection in self.connections:
+            connection.close()

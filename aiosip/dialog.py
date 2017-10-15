@@ -174,6 +174,8 @@ class Dialog:
         for task in self._tasks:
             task.cancel()
 
+        # self.connection = None
+
     def _connection_lost(self):
         for transactions in self._transactions.values():
             for transaction in transactions.values():
