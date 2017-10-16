@@ -27,13 +27,6 @@ class Connection:
         else:
             self.protocol.send_message(msg)
 
-    def _connection_lost(self):
-        self.closed = True
-        LOG.debug('Connection lost for %s', self.remote_addr)
-        for dialog in self.dialogs.values():
-            dialog._connection_lost()
-        self.dialogs = {}
-
     def create_dialog(self, from_uri, to_uri, contact_uri=None, password=None, call_id=None, cseq=0, router=Router()):
         if self.closed:
             raise ConnectionError
@@ -56,6 +49,18 @@ class Connection:
         self.dialogs[call_id] = dialog
         return dialog
 
+    def close(self):
+        print("CLOSING HERE", self)
+        self.protocol.close()
+        self.closed = True
+
+    def _connection_lost(self):
+        self.closed = True
+        LOG.debug('Connection lost for %s', self.remote_addr)
+        for dialog in self.dialogs.values():
+            dialog._connection_lost()
+        self.dialogs = {}
+
     def _stop_dialog(self, call_id):
         try:
             del self.dialogs[call_id]
@@ -76,5 +81,6 @@ class Connection:
     def __repr__(self):
         from_uri = '{}:{}'.format(*self.remote_addr) if self.remote_addr else None
         to_uri = '{}:{}'.format(*self.local_addr) if self.local_addr else None
-        return '<{} from={}, to={}>'.format(self.__class__.__name__,
-                                            from_uri , to_uri)
+
+        return '<{} from={}, to={}, 0x{:x}>'.format(self.__class__.__name__,
+                                                from_uri, to_uri, id(self.protocol))

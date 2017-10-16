@@ -69,6 +69,7 @@ class Application(MutableMapping):
         if (protocol, local_addr, remote_addr) in self._connections:
             return self._connections[protocol, local_addr, remote_addr]
 
+        print("NEW", remote_addr, local_addr, protocol)
         if issubclass(protocol, asyncio.DatagramProtocol):
             trans, proto = yield from self.loop.create_datagram_endpoint(
                 self.make_handler(protocol),
@@ -76,6 +77,7 @@ class Application(MutableMapping):
                 remote_addr=remote_addr,
             )
 
+            print("DONE", trans, proto)
             connection = Connection(local_addr, remote_addr, proto, self)
             self._connections[local_addr, remote_addr, protocol] = connection
             yield from proto.ready
@@ -131,6 +133,7 @@ class Application(MutableMapping):
         connection = self._connections.get((local_addr, remote_addr, type(protocol)))
         if not connection:
             LOG.debug('New connection for %s', remote_addr)
+            print("FUCK ME?")
             connection = Connection(local_addr, remote_addr, protocol, self)
             self._connections[local_addr, remote_addr, type(protocol)] = connection
 

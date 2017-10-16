@@ -33,6 +33,13 @@ class UDP(asyncio.DatagramProtocol):
 
         self.app.dispatch(self, msg_obj, addr)
 
+    def close(self):
+        assert self.transport
+        if self.transport:
+            print("PLOP")
+            self.transport.close()
+            self.transport = None
+
     # def error_received(self, exc):
     #     print('Error received:', exc)
     #
@@ -68,6 +75,13 @@ class TCP(asyncio.Protocol):
         self.app.dispatch(self, msg_obj, '')
 
     def connection_lost(self, error):
-        LOG.debug('Connection lost from %s: %s', self.transport.get_extra_info('peername'), error)
+        if self.transport:
+            LOG.debug('Connection lost from %s: %s', self.transport.get_extra_info('peername'), error)
         super().connection_lost(error)
         self.app._connection_lost(self)
+
+    def close(self):
+        assert self.transport
+        if self.transport:
+            self.transport.close()
+            self.transport = None
