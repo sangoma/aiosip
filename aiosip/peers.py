@@ -5,10 +5,13 @@ import uuid
 
 from collections import defaultdict
 import websockets
+from multidict import CIMultiDict
 
 from . import utils
+from .message import Request
 from .protocol import UDP, TCP, WS
 from .contact import Contact
+from .dialog2 import DialogSetup
 
 LOG = logging.getLogger(__name__)
 
@@ -86,6 +89,75 @@ class Peer:
         )
         LOG.debug('Creating: %s', dialog)
         self._dialogs[call_id] = dialog
+        return dialog
+
+    async def invite(self, from_details, to_details, contact_details=None,
+                     password=None, call_id=None, cseq=0, headers=None,
+                     payload=None, router=None):
+
+        def _prepare(method):
+            from_details.add_tag()
+
+            nonlocal cseq
+            if not cseq:
+                cseq += 1
+
+            nonlocal headers
+            headers = CIMultiDict(headers or {})
+
+            if 'User-Agent' not in headers:
+                headers['User-Agent'] = self._app.defaults['user_agent']
+
+            headers['Call-ID'] = call_id
+
+            return Request(
+                method=method,
+                cseq=cseq,
+                from_details=from_details,
+                to_details=to_details,
+                contact_details=contact_details,
+                headers=headers,
+                payload=payload,
+            )
+
+        if not call_id:
+            call_id = str(uuid.uuid4())
+
+        if not contact_details:
+            host, port = self.local_addr
+
+            # No way to get the public local addr in UDP. Allow an override or select the From host
+            # Maybe with https://bugs.python.org/issue31203
+            if self._app.defaults['override_contact_host']:
+                host = self._app.defaults['override_contact_host']
+            elif host == '0.0.0.0' or host.startswith('127.'):
+                host = from_details['uri']['host']
+
+            contact_details = Contact(
+                {
+                    'uri': 'sip:{username}@{host_and_port};transport={protocol}'.format(
+                        username=from_details['uri']['user'],
+                        host_and_port=utils.format_host_and_port(host, port),
+                        protocol=type(self._protocol).__name__.upper()
+                    )
+                }
+            )
+
+        dialog = DialogSetup(
+            app=self._app,
+            msg=_prepare('INVITE'),
+            from_details=from_details,
+            to_details=to_details,
+            contact_details=contact_details,
+            call_id=call_id,
+            peer=self,
+            password=password,
+            cseq=cseq,
+            router=router
+        )
+        LOG.debug('Starting dialog: %s', dialog)
+        self._dialogs[call_id] = dialog
+        await dialog.start()
         return dialog
 
     async def proxy_request(self, dialog, msg, timeout=5):
